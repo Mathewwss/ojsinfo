@@ -24,39 +24,15 @@ import "fmt"
 
 // Get Real name all languages
 func (u *User) GetRealNames () error {
-	query := fmt.Sprint("SELECT")
-	query = query + " " + "s1.locale, s1.setting_value,"
-	query = query + " " + "s2.setting_value"
-	query = query + " " + "FROM"
-	query = query + " " + "("
-	query = query + " " + "SELECT DISTINCT"
+	// Base query
+	query := fmt.Sprint("SELECT DISTINCT")
 	query = query + " " + "locale, setting_value"
 	query = query + " " + "FROM"
 	query = query + " " + "user_settings"
 	query = query + " " + "WHERE"
-	query = query + " " + "setting_name = 'givenName'"
-	query = query + " " + "AND user_id = '" + fmt.Sprint(u.UID) + "'"
-	query = query + " " + "ORDER BY"
-	query = query + " " + "locale"
-	query = query + " " + ") AS s1"
-	query = query + " " + "INNER JOIN"
-	query = query + " " + "("
-	query = query + " " + "SELECT DISTINCT"
-	query = query + " " + "locale, setting_value"
-	query = query + " " + "FROM"
-	query = query + " " + "user_settings"
-	query = query + " " + "WHERE"
-	query = query + " " + "setting_name = 'familyName'"
-	query = query + " " + "AND user_id = '" + fmt.Sprint(u.UID) + "'"
-	query = query + " " + "ORDER BY"
-	query = query + " " + "locale"
-	query = query + " " + ") AS s2"
-	query = query + " " + "ON"
-	query = query + " " + "s1.locale = s2.locale"
-	query = query + " " + "ORDER BY"
-	query = query + " " + "s1.locale"
-	query = query + ";"
+	query = query + " " + "user_id = '" + fmt.Sprint(u.UID) + "'"
 
+	// Database setitngs
 	driver := DbCfg.Db_conf.Driver
 	con := DbCfg.Db_conf.Settings
 
@@ -76,23 +52,29 @@ func (u *User) GetRealNames () error {
 
 	}
 
-	res, err := db.Query(query)
-
-	if err != nil {
-
-		return err
-
+	// name types
+	setting_names := []string{
+		"givenName",
+		"familyName",
 	}
 
-	locale := ""
-	first := ""
-	middles := ""
+	for a := 0; a < len(setting_names); a++ {
 
-	u.RealNames = map[string]string{}
+		// Check names
+		if a == 0 {
+			// Start map
+			u.RealNames = map[string]string{}
 
-	for res.Next() {
+		}
 
-		err = res.Scan(&locale, &first, &middles)
+		// Finaly query
+		run := query + " " + "AND setting_name = '" + setting_names[a]
+		run = run + "'"
+		run = run + " " + "ORDER BY"
+		run = run + " " + "locale"
+		run = run + ";"
+
+		res, err := db.Query(run)
 
 		if err != nil {
 
@@ -100,14 +82,36 @@ func (u *User) GetRealNames () error {
 
 		}
 
-		if first + middles == "" {
+		locale := ""
+		name := ""
 
-			continue
+		for res.Next() {
 
+			err = res.Scan(&locale, &name)
+
+			if err != nil {
+
+				return err
+
+			}
+
+			if name == "" {
+
+				continue
+
+			}
+
+			// Check names
+			if len(u.RealNames[locale]) == 0 {
+				// First name
+				u.RealNames[locale] = name
+
+			} else {
+				// Middles names
+				u.RealNames[locale] = u.RealNames[locale] + " " + name
+
+			}
 		}
-
-		u.RealNames[locale] = first + " " + middles
-
 	}
 
 	return nil
