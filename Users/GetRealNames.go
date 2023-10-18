@@ -22,7 +22,6 @@ import "fmt"
 
 // ---------------------------- Functions --------------------------- //
 
-// Get Real name all languages
 func (u *User) GetRealNames () error {
 	// Base query
 	query := fmt.Sprint("SELECT DISTINCT")
@@ -36,18 +35,12 @@ func (u *User) GetRealNames () error {
 	driver := DbCfg.Db_conf.Driver
 	con := DbCfg.Db_conf.Settings
 
+	// Connect database
 	db, err := sql.Open(driver, con)
 
+	// Check errors
 	if err != nil {
-
-		return err
-
-	}
-
-	err = db.Ping()
-
-	if err != nil {
-
+		// Stop
 		return err
 
 	}
@@ -59,8 +52,7 @@ func (u *User) GetRealNames () error {
 	}
 
 	for a := 0; a < len(setting_names); a++ {
-
-		// Check names
+		// Check loop
 		if a == 0 {
 			// Start map
 			u.RealNames = map[string]string{}
@@ -74,29 +66,35 @@ func (u *User) GetRealNames () error {
 		run = run + " " + "locale"
 		run = run + ";"
 
+		// Run query
 		res, err := db.Query(run)
 
+		// Check errors
 		if err != nil {
-
+			// Stop
 			return err
 
 		}
 
+		// Start variables
 		locale := ""
 		name := ""
 
+		// View results
 		for res.Next() {
-
+			// Get values
 			err = res.Scan(&locale, &name)
 
+			// Check errors
 			if err != nil {
-
+				// Stop
 				return err
 
 			}
 
+			// Empty name
 			if name == "" {
-
+				// Skip
 				continue
 
 			}
@@ -114,8 +112,8 @@ func (u *User) GetRealNames () error {
 		}
 	}
 
+	// Finish
 	return nil
-
 }
 
 // ------------------------------------------------------------------ //

@@ -22,8 +22,8 @@ import "fmt"
 
 // ---------------------------- Functions --------------------------- //
 
-// Get date start
 func (s *Submission) GetDateSubmitted () error {
+	// Sql query
 	query := fmt.Sprint("SELECT DISTINCT")
 	query = query + " " + "date_submitted"
 	query = query + " " + "FROM"
@@ -32,45 +32,44 @@ func (s *Submission) GetDateSubmitted () error {
 	query = query + " " + "submission_id = '" + fmt.Sprint(s.ID) + "'"
 	query = query + ";"
 
+	// Database conf
 	driver := DbCfg.Db_conf.Driver
 	con := DbCfg.Db_conf.Settings
 
+	// Connect database
 	db, err := sql.Open(driver, con)
 
+	// Check errors
 	if err != nil {
-
+		// Stop
 		return err
 
 	}
 
-	err = db.Ping()
-
-	if err != nil {
-
-		return err
-
-	}
-
+	// Run query
 	res, err := db.Query(query)
 
+	// Check errors
 	if err != nil {
-
+		// Stop
 		return err
 
 	}
 
+	// View results
 	for res.Next() {
-
+		// Get values
 		err = res.Scan(&s.Start)
 
+		// Check errors
 		if err != nil {
-
+			// Stop
 			return err
 
 		}
-
 	}
 
+	// Finish
 	return nil
 
 }

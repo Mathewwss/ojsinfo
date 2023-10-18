@@ -22,7 +22,6 @@ import "fmt"
 
 // ---------------------------- Functions --------------------------- //
 
-// Get journal groups
 func (j *Journal) GetNames () error {
 	// Sql query
 	query := "SELECT DISTINCT"
@@ -36,6 +35,7 @@ func (j *Journal) GetNames () error {
 	query = query + " " + "locale"
 	query = query + ";"
 
+	// Database connection settings
 	driver := DbCfg.Db_conf.Driver
 	con := DbCfg.Db_conf.Settings
 

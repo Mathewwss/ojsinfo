@@ -22,7 +22,6 @@ import "fmt"
 
 // ---------------------------- Functions --------------------------- //
 
-// Get journal groups
 func (j *Journal) GetGroups () error {
 	// Sql query
 	query := "SELECT DISTINCT"
@@ -46,6 +45,7 @@ func (j *Journal) GetGroups () error {
 	query = query + " " + "t1.locale ASC, t1.user_group_id ASC"
 	query = query + ";"
 
+	// Database connection settings
 	driver := DbCfg.Db_conf.Driver
 	con := DbCfg.Db_conf.Settings
 

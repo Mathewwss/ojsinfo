@@ -22,7 +22,6 @@ import "fmt"
 
 // ---------------------------- Functions --------------------------- //
 
-// Get date start
 func (s *Submission) GetTitles () error {
 	// Base query
 	query := "SELECT"
@@ -37,22 +36,16 @@ func (s *Submission) GetTitles () error {
 	query = query + " " + "t1.submission_id = '" + fmt.Sprint(s.ID)
 	query = query + "'"
 
-	// Database
+	// Database conf
 	driver := DbCfg.Db_conf.Driver
 	con := DbCfg.Db_conf.Settings
 
+	// Connect database
 	db, err := sql.Open(driver, con)
 
+	// Check errors
 	if err != nil {
-
-		return err
-
-	}
-
-	err = db.Ping()
-
-	if err != nil {
-
+		// Stop
 		return err
 
 	}
@@ -78,23 +71,28 @@ func (s *Submission) GetTitles () error {
 		run = run + " " + "t2.locale"
 		run = run + ";"
 
+		// Run query
 		res, err := db.Query(run)
 
+		// Check errors
 		if err != nil {
-
+			// Stop
 			return err
 
 		}
 
+		// Start variables
 		value := ""
 		locale := ""
 
+		// View results
 		for res.Next() {
-
+			// Get values
 			err = res.Scan(&locale, &value)
 
+			// Check errors
 			if err != nil {
-
+				// Stop
 				return err
 
 			}
@@ -119,8 +117,8 @@ func (s *Submission) GetTitles () error {
 		}
 	}
 
+	// Finish
 	return nil
-
 }
 
 // ------------------------------------------------------------------ //
