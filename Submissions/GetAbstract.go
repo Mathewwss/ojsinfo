@@ -50,6 +50,9 @@ func (s *Submission) GetAbstract () error {
 	// Connect database
 	db, err := sql.Open(driver, con)
 
+	// Finish Connection
+	defer db.Close()
+
 	// Check errors
 	if err != nil {
 		// Stop

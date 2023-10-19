@@ -41,6 +41,9 @@ func New (identity int) (Submission, error) {
 	// Connect databae
 	db, err := sql.Open(driver, con)
 
+	// Finish Connection
+	defer db.Close()
+
 	// Check errors
 	if err != nil {
 		// Stop

@@ -42,6 +42,9 @@ func (j *Journal) GetNames () error {
 	// Connect db
 	db, err := sql.Open(driver, con)
 
+	// Finish Connection
+	defer db.Close()
+
 	// Check errors
 	if err != nil {
 		// Stop
