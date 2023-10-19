@@ -13,6 +13,7 @@ package Submissions
 
 type Submission struct {
 	ID int
+	Locale string
 	Start string
 	// language: title
 	Section map[string]string
