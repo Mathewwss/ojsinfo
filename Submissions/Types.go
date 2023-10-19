@@ -23,6 +23,8 @@ type Submission struct {
 	JournalNames map[string]string
 	// language: [keywords]
 	Keywords map[string][]string
+	// language: abstract
+	Abstract map[string]string
 }
 
 // ------------------------------------------------------------------ //
