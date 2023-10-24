@@ -81,7 +81,7 @@ func (s *Submission) GetPublicationInfo () error {
 	// View results
 	for res.Next() {
 		// Get values
-		err = res.Scan(volume, number, year, pub_sts)
+		err = res.Scan(volume, number, year, &pub_sts)
 
 		// Check errors
 		if err != nil {
