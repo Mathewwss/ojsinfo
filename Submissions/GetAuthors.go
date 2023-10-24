@@ -85,7 +85,7 @@ func (s *Submission) GetAuthors () error {
 	email := ""
 	value := ""
 	name := ""
-	s.Authors = map[int]map[string]string{}
+	s.Authors = map[int]map[string][]string{}
 
 	// View results
 	for res.Next() {
@@ -104,15 +104,22 @@ func (s *Submission) GetAuthors () error {
 			// Update name
 			name = name + " " + value
 
-			// Check size
 			if len(s.Authors[seq]) == 0 {
 				// Start map
-				s.Authors[seq] = map[string]string{}
+				s.Authors[seq] = map[string][]string{}
 
 			}
 
-			// Update map
-			s.Authors[seq][locale] = name + ", " + email
+			// Email error
+			if email == "<![CDATA[]]>" {
+				// Slice update (empty email)
+				s.Authors[seq][locale] = []string{name, ""}
+
+			} else {
+				// Slice update (empty email)
+				s.Authors[seq][locale] = []string{name, email}
+
+			}
 
 		} else {
 			// Update last variables

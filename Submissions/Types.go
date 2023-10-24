@@ -17,7 +17,8 @@ type Submission struct {
 	Start string
 	// language: title
 	Section map[string]string
-	Authors map[int]map[string]string
+	// Order: langugage: [name, email]
+	Authors map[int]map[string][]string
 	// language: title
 	Titles map[string]string
 	// language: journal name
