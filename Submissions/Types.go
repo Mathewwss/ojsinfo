@@ -31,6 +31,9 @@ type Submission struct {
 	Keywords map[string][]string
 	// language: abstract
 	Abstract map[string]string
+	// Round: [reviewers]
+	// [[round, email, decision]]
+	Reviewers [][]string
 }
 
 // ------------------------------------------------------------------ //
