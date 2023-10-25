@@ -25,11 +25,20 @@ import "fmt"
 func (u *User) GetRealNames () error {
 	// Base query
 	query := fmt.Sprint("SELECT DISTINCT")
-	query = query + " " + "locale, setting_value"
+	query = query + " " + "locale, setting_value, setting_name"
 	query = query + " " + "FROM"
 	query = query + " " + "user_settings"
 	query = query + " " + "WHERE"
-	query = query + " " + "user_id = '" + fmt.Sprint(u.UID) + "'"
+	query = query + " " + "("
+	query = query + " " + "setting_name = 'givenName'"
+	query = query + " " + "OR setting_name = 'familyName'"
+	query = query + " " + ")"
+	query = query + " " + "AND user_id = '" + fmt.Sprint(u.UID) + "'"
+	query = query + " " + "AND setting_value <> ''"
+	query = query + " " + "ORDER BY"
+	query = query + " " + "locale ASC,"
+	query = query + " " + "setting_name DESC"
+	query = query + " " + ";"
 
 	// Database setitngs
 	driver := DbCfg.Db_conf.Driver
@@ -48,29 +57,26 @@ func (u *User) GetRealNames () error {
 
 	}
 
-	// name types
-	setting_names := []string{
-		"givenName",
-		"familyName",
+	// Run query
+	res, err := db.Query(query)
+
+	// Check errors
+	if err != nil {
+		// Stop
+		return err
+
 	}
 
-	for a := 0; a < len(setting_names); a++ {
-		// Check loop
-		if a == 0 {
-			// Start map
-			u.RealNames = map[string]string{}
+	// Start variables
+	locale := ""
+	setting := ""
+	name := ""
+	u.RealNames = map[string]string{}
 
-		}
-
-		// Finaly query
-		run := query + " " + "AND setting_name = '" + setting_names[a]
-		run = run + "'"
-		run = run + " " + "ORDER BY"
-		run = run + " " + "locale"
-		run = run + ";"
-
-		// Run query
-		res, err := db.Query(run)
+	// View results
+	for res.Next() {
+		// Get values
+		err = res.Scan(&locale, &name, &setting)
 
 		// Check errors
 		if err != nil {
@@ -79,40 +85,15 @@ func (u *User) GetRealNames () error {
 
 		}
 
-		// Start variables
-		locale := ""
-		name := ""
+		if setting == "givenName" {
 
-		// View results
-		for res.Next() {
-			// Get values
-			err = res.Scan(&locale, &name)
+			u.RealNames[locale] = name
 
-			// Check errors
-			if err != nil {
-				// Stop
-				return err
+		} else if setting == "familyName" {
+			u.RealNames[locale] = u.RealNames[locale] + " " + name
 
-			}
-
-			// Empty name
-			if name == "" {
-				// Skip
-				continue
-
-			}
-
-			// Check names
-			if len(u.RealNames[locale]) == 0 {
-				// First name
-				u.RealNames[locale] = name
-
-			} else {
-				// Middles names
-				u.RealNames[locale] = u.RealNames[locale] + " " + name
-
-			}
 		}
+
 	}
 
 	// Finish
