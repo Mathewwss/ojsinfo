@@ -16,6 +16,7 @@ type Journal struct {
 	Path string
 	Groups map[int]map[string]string
 	Sections map[int]map[string]string
+	Reviewers []string
 	Submissions []int
 	SubmissionsIncomplete []int
 	SubmissionsNew []int
