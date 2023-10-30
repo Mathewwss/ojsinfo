@@ -1,13 +1,13 @@
 // ----------------------------- Package ---------------------------- //
 
-package Users
+package DbCfg
 
 // ------------------------------------------------------------------ //
 
 // ----------------------------- Imports ---------------------------- //
 
-import "github.com/Mathewwss/ojsinfo/DbCfg"
-import "fmt"
+import _ "github.com/go-sql-driver/mysql"
+import "database/sql"
 
 // ------------------------------------------------------------------ //
 
@@ -21,51 +21,23 @@ import "fmt"
 
 // ---------------------------- Functions --------------------------- //
 
-func (u *User) GetEmail () error {
-	// Check connection
-	err := DbCfg.Db_conf.CheckCon()
+func (c *DbCon) OpenCon () {
+	// Open connection
+	db, err := sql.Open(c.Driver, c.Settings)
 
 	// Check errors
 	if err != nil {
-		// Stop
-		return err
+		// Update struct
+		c.ConErr = err
+		c.Opened = false
+
+	} else {
+		// Update struct
+		c.ConErr = nil
+		c.Con = db
+		c.Opened = true
 
 	}
-
-	// Sql query
-	query := fmt.Sprint("SELECT DISTINCT")
-	query = query + " " + "email"
-	query = query + " " + "FROM"
-	query = query + " " + "users"
-	query = query + " " + "WHERE"
-	query = query + " " + "user_id = '" + fmt.Sprint(u.UID) + "'"
-	query = query + ";"
-
-	// Run query
-	res, err := DbCfg.Db_conf.Con.Query(query)
-
-	// Check errors
-	if err != nil {
-		// Stop
-		return err
-
-	}
-
-	// View results
-	for res.Next() {
-		// Get value
-		err = res.Scan(&u.Email)
-
-		// Check errors
-		if err != nil {
-			// Stop
-			return err
-
-		}
-	}
-
-	// Finish
-	return nil
 }
 
 // ------------------------------------------------------------------ //

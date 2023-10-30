@@ -7,7 +7,6 @@ package Users
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
-import "database/sql"
 import "errors"
 import "fmt"
 
@@ -25,6 +24,16 @@ import "fmt"
 
 // Create user with exists on database
 func New (identity string) (User, error) {
+	// Check connection
+	err := DbCfg.Db_conf.CheckCon()
+
+	// Check errors
+	if err != nil {
+		// Stop
+		return User{}, err
+
+	}
+
 	// Sql query
 	query := fmt.Sprint("SELECT DISTINCT")
 	query = query + " " + "user_id"
@@ -35,25 +44,8 @@ func New (identity string) (User, error) {
 	query = query + " " + "OR username = '" + identity + "'"
 	query = query + ";"
 
-	// Database conf
-	driver := DbCfg.Db_conf.Driver
-	con := DbCfg.Db_conf.Settings
-
-	// Connect database
-	db, err := sql.Open(driver, con)
-
-	// Finish Connection
-	defer db.Close()
-
-	// Check errors
-	if err != nil {
-		// Stop
-		return User{}, err
-
-	}
-
 	// Run query
-	res, err := db.Query(query)
+	res, err := DbCfg.Db_conf.Con.Query(query)
 
 	// Check errors
 	if err != nil {

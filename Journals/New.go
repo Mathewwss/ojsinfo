@@ -7,7 +7,6 @@ package Journals
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
-import "database/sql"
 import "errors"
 import "fmt"
 
@@ -24,6 +23,16 @@ import "fmt"
 // ---------------------------- Functions --------------------------- //
 
 func New (identity string) (Journal, error) {
+	// Check connection
+	err := DbCfg.Db_conf.CheckCon()
+
+	// Check errors
+	if err != nil {
+		// Stop
+		return Journal{}, err
+
+	}
+
 	// Sql query
 	query := fmt.Sprint("SELECT DISTINCT")
 	query = query + " " + "journal_id, path"
@@ -33,35 +42,8 @@ func New (identity string) (Journal, error) {
 	query = query + " " + "path = '" + identity + "'"
 	query = query + ";"
 
-	// Database connection settings
-	driver := DbCfg.Db_conf.Driver
-	con := DbCfg.Db_conf.Settings
-
-	// Connect db
-	db, err := sql.Open(driver, con)
-
-	// Finish Connection
-	defer db.Close()
-
-	// Check errors
-	if err != nil {
-		// Stop
-		return Journal{}, err
-
-	}
-
-	// Check connection
-	err = db.Ping()
-
-	// Check errors
-	if err != nil {
-		// Stop
-		return Journal{}, err
-
-	}
-
 	// Run query
-	res, err := db.Query(query)
+	res, err := DbCfg.Db_conf.Con.Query(query)
 
 	// Check errors
 	if err != nil {

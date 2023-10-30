@@ -7,7 +7,6 @@ package Submissions
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
-import "database/sql"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -24,6 +23,16 @@ import "fmt"
 
 // Get date start
 func (s *Submission) GetKeywords () error {
+	// Check connection
+	err := DbCfg.Db_conf.CheckCon()
+
+	// Check errors
+	if err != nil {
+		// Stop
+		return err
+
+	}
+
 	// Sql query
 	query := fmt.Sprint("SELECT DISTINCT")
 	query = query + " " + "t1.locale, t1.setting_value"
@@ -50,25 +59,8 @@ func (s *Submission) GetKeywords () error {
 	query = query + " " + "t1.locale"
 	query = query + ";"
 
-	// Database conf
-	driver := DbCfg.Db_conf.Driver
-	con := DbCfg.Db_conf.Settings
-
-	// Connect database
-	db, err := sql.Open(driver, con)
-
-	// Finish Connection
-	defer db.Close()
-
-	// Check errors
-	if err != nil {
-		// Stop
-		return err
-
-	}
-
 	// Run query
-	res, err := db.Query(query)
+	res, err := DbCfg.Db_conf.Con.Query(query)
 
 	// Check errors
 	if err != nil {

@@ -7,7 +7,6 @@ package Journals
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
-import "database/sql"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -23,6 +22,16 @@ import "fmt"
 // ---------------------------- Functions --------------------------- //
 
 func (j *Journal) GetScheduledSubmissions () error {
+	// Check connection
+	err := DbCfg.Db_conf.CheckCon()
+
+	// Check errors
+	if err != nil {
+		// Stop
+		return err
+
+	}
+
 	// Sql query
 	query := "SELECT DISTINCT"
 	query = query + " " + "submission_id"
@@ -35,25 +44,8 @@ func (j *Journal) GetScheduledSubmissions () error {
 	query = query + " " + "date_submitted"
 	query = query + ";"
 
-	// Database connection settings
-	driver := DbCfg.Db_conf.Driver
-	con := DbCfg.Db_conf.Settings
-
-	// Connect db
-	db, err := sql.Open(driver, con)
-
-	// Finish Connection
-	defer db.Close()
-
-	// Check errors
-	if err != nil {
-		// Stop
-		return err
-
-	}
-
 	// Run query
-	res, err := db.Query(query)
+	res, err := DbCfg.Db_conf.Con.Query(query)
 
 	// Check errors
 	if err != nil {

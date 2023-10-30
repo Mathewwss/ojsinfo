@@ -6,7 +6,7 @@ package DbCfg
 
 // ----------------------------- Imports ---------------------------- //
 
-import _ "github.com/go-sql-driver/mysql"
+import "database/sql"
 
 // ------------------------------------------------------------------ //
 
@@ -15,19 +15,16 @@ import _ "github.com/go-sql-driver/mysql"
 type DbCon struct {
 	// SGBD
 	Driver string
-
 	// Port, user, password ...
 	Settings string
+	Con *sql.DB
+	ConErr error
+	Opened bool
 }
 
 // ------------------------------------------------------------------ //
 
 // ---------------------------- Variables --------------------------- //
-
-var Db_conf = DbCon{
-	"",
-	"",
-}
 
 // ------------------------------------------------------------------ //
 
