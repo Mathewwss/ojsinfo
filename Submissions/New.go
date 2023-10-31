@@ -29,7 +29,7 @@ func New (identity int) (Submission, error) {
 	// Check errors
 	if err != nil {
 		// Stop
-		return err
+		return Submission{}, err
 
 	}
 
