@@ -67,7 +67,7 @@ func (s *Submission) GetTitles () error {
 		run = run + ";"
 
 		// Run query
-		res, err := DbCfg.Db_conf.Con.Query(query)
+		res, err := DbCfg.Db_conf.Con.Query(run)
 
 		// Check errors
 		if err != nil {
