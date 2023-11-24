@@ -34,6 +34,7 @@ type Submission struct {
 	// Round: [reviewers]
 	// [[round, email, decision]]
 	Reviewers [][]string
+	Access map[string]int
 }
 
 // ------------------------------------------------------------------ //
