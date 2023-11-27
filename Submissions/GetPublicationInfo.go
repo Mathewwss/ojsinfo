@@ -64,6 +64,12 @@ func (s *Submission) GetPublicationInfo () error {
 
 	}
 
+	// Empty values
+	s.Published = false
+	s.PublicationVolume = 0
+	s.PublicationYear = 0
+	s.PublicationNumber = ""
+
 	// Start variables
 	pub_sts := 0
 	volume := &s.PublicationVolume
@@ -81,19 +87,11 @@ func (s *Submission) GetPublicationInfo () error {
 			return err
 
 		}
-
 	}
 
-	// Check values
-	if *volume == 0 && *year == 0 && *number == "" {
-		// Update struct
-		*volume = -1
-		*year = -1
-		*number = ""
-		s.Published = false
-
-	} else {
-		// Update struct
+	// Check status
+	if pub_sts == 1 {
+		// Update value
 		s.Published = true
 
 	}
