@@ -15,6 +15,7 @@ type Submission struct {
 	ID int
 	Locale string
 	Start string
+	Stage string
 	// language: title
 	Section map[string]string
 	// Order: langugage: [name, email]
