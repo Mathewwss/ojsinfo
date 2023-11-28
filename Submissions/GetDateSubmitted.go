@@ -34,7 +34,10 @@ func (s *Submission) GetDateSubmitted () error {
 
 	// Sql query
 	query := fmt.Sprint("SELECT DISTINCT")
-	query = query + " " + "date_submitted"
+	query = query + " " + "CASE"
+	query = query + " " + "WHEN date_submitted IS NULL THEN \"\""
+	query = query + " " + "ELSE date_submitted"
+	query = query + " " + "END"
 	query = query + " " + "FROM"
 	query = query + " " + "submissions"
 	query = query + " " + "WHERE"
