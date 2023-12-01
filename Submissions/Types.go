@@ -25,8 +25,8 @@ type Submission struct {
 	// language: journal name
 	JournalNames map[string]string
 	Published bool
-	PublicationYear int
-	PublicationVolume int
+	PublicationYear int64
+	PublicationVolume int64
 	PublicationNumber string
 	// language: [keywords]
 	Keywords map[string][]string

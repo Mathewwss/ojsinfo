@@ -7,6 +7,7 @@ package Submissions
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "database/sql"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -64,22 +65,16 @@ func (s *Submission) GetPublicationInfo () error {
 
 	}
 
-	// Empty values
-	s.Published = false
-	s.PublicationVolume = 0
-	s.PublicationYear = 0
-	s.PublicationNumber = ""
-
 	// Start variables
 	pub_sts := 0
-	volume := &s.PublicationVolume
-	year := &s.PublicationYear
-	number := &s.PublicationNumber
+	volume := sql.NullInt64{}
+	year := sql.NullInt64{}
+	number := sql.NullString{}
 
 	// View results
 	for res.Next() {
 		// Get values
-		err = res.Scan(volume, number, year, &pub_sts)
+		err = res.Scan(&volume, &number, &year, &pub_sts)
 
 		// Check errors
 		if err != nil {
@@ -94,7 +89,16 @@ func (s *Submission) GetPublicationInfo () error {
 		// Update value
 		s.Published = true
 
+	} else {
+		// Update value
+		s.Published = false
+
 	}
+
+	// Update struct
+	s.PublicationYear = year.Int64
+	s.PublicationVolume = volume.Int64
+	s.PublicationNumber = number.String
 
 	// Finish
 	return nil
