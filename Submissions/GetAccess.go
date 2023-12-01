@@ -8,6 +8,7 @@ package Submissions
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
 import "fmt"
+import "database/sql"
 
 // ------------------------------------------------------------------ //
 
@@ -43,6 +44,15 @@ func (s *Submission) GetAccess () error {
 
 	}
 
+	// Start map
+	s.Access = map[string]int64{
+		"All": 0,
+		"Abstract": 0,
+		"HTML": 0,
+		"PDF": 0,
+		"Others": 0,
+	}
+
 	// Check publication status
 	if s.Published == false {
 		// Stop
@@ -60,19 +70,12 @@ func (s *Submission) GetAccess () error {
 
 	// Base query
 	base := "SELECT"
-	base = base + " " + "CASE"
-	base = base + " " + "WHEN SUM(metric) IS NULL THEN 0"
-	base = base + " " + "ELSE SUM(metric)"
-	base = base + " " + "END"
+	base = base + " " + "SUM(metric)"
 	base = base + " " + "FROM"
 	base = base + " " + "metrics"
 	base = base + " " + "WHERE"
 	base = base + " " + "submission_id = '" + fmt.Sprint(s.ID)
 	base = base + "'"
-
-	// Start map
-	s.Access = map[string]int{}
-	s.Access["All"] = 0
 
 	// View types
 	for a := 0; a < len(access_type); a++ {
@@ -107,8 +110,10 @@ func (s *Submission) GetAccess () error {
 
 		// View results
 		for res.Next() {
+			// Start variable
+			var num sql.NullInt64
+
 			// Get value
-			num := 0
 			err = res.Scan(&num)
 
 			// Check errors
@@ -119,8 +124,8 @@ func (s *Submission) GetAccess () error {
 			}
 
 			// Update map
-			s.Access[access_type[a][0]] = num
-			s.Access["All"] = s.Access["All"] + num
+			s.Access[access_type[a][0]] = num.Int64
+			s.Access["All"] = s.Access["All"] + num.Int64
 
 		}
 	}
