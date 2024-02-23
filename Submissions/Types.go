@@ -7,6 +7,8 @@ package Submissions
 
 // ----------------------------- Imports ---------------------------- //
 
+import "github.com/Mathewwss/ojsinfo/Users"
+
 // ------------------------------------------------------------------ //
 
 // ------------------------------ Types ----------------------------- //
@@ -34,8 +36,24 @@ type Submission struct {
 	Abstract map[string]string
 	// Round: [reviewers]
 	// [[round, email, decision]]
-	Reviewers [][]string
+	Reviews [][]Review
 	Access map[string]int64
+}
+
+type Review struct {
+	Users.User
+	Recommendation string
+	Round int64
+	Unconsidered int64
+	Cancelled int64
+	Declined int64
+	DateAssigned string
+	DateNotified string
+	DateConfirmed string
+	DateCompleted string
+	DateAcknowledged string
+	DateDue string
+	DateResponseDue string
 }
 
 // ------------------------------------------------------------------ //
