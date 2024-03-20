@@ -7,6 +7,7 @@ package Journals
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -33,22 +34,25 @@ func (j *Journal) GetSections () error {
 	}
 
 	// Sql query
-	query := "SELECT DISTINCT"
-	query = query + " " + "t1.locale, t1.section_id,"
-	query = query + " " + "t1.setting_value"
-	query = query + " " + "FROM"
-	query = query + " " + "section_settings AS t1"
-	query = query + " " + "INNER JOIN"
-	query = query + " " + "sections AS t2"
-	query = query + " " + "ON"
-	query = query + " " + "t1.section_id = t2.section_id"
-	query = query + " " + "WHERE"
-	query = query + " " + "t1.setting_name = 'title'"
-	query = query + " " + "AND t2.journal_id = '" + fmt.Sprint(j.ID)
-	query = query + "'"
-	query = query + " " + "ORDER BY"
-	query = query + " " + "t1.locale ASC, t1.section_id ASC"
-	query = query + ";"
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			t1.locale, t1.section_id, t1.setting_value
+		FROM
+			section_settings AS t1
+		INNER JOIN
+			sections AS t2
+		ON
+			t1.section_id = t2.section_id
+		WHERE
+			t1.setting_name = 'title'
+			AND t2.journal_id = %v
+		ORDER BY
+			t1.locale ASC, t1.section_id ASC
+		;
+	`, j.ID)
+
+	// Same line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)

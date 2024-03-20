@@ -35,22 +35,26 @@ func (s *Submission) GetAbstract () error {
 	}
 
 	// Sql query
-	query := "SELECT"
-	query = query + " " + "t1.locale, t1.setting_value"
-	query = query + " " + "FROM"
-	query = query + " " + "publication_settings AS t1"
-	query = query + " " + "INNER JOIN"
-	query = query + " " + "publications AS t2"
-	query = query + " " + "ON"
-	query = query + " " + "t1.publication_id = t2.publication_id"
-	query = query + " " + "WHERE"
-	query = query + " " + "t1.setting_value <> ''"
-	query = query + " " + "AND t1.setting_name = 'abstract'"
-	query = query + " " + "AND t2.submission_id = '" + fmt.Sprint(s.ID)
-	query = query + "'"
-	query = query + " " + "ORDER BY"
-	query = query + " " + "t1.locale"
-	query = query + ";"
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			t1.locale, t1.setting_value
+		FROM
+			publication_settings AS t1
+		INNER JOIN
+			publications AS t2
+		ON
+			t1.publication_id = t2.publication_id
+		WHERE
+			t1.setting_value <> ''
+			AND t1.setting_name = 'abstract'
+			AND t2.submission_id = %v
+		ORDER BY
+			t1.locale
+		;
+	`, s.ID)
+
+	// Same line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)

@@ -34,14 +34,15 @@ func New (identity int) (Submission, error) {
 	}
 
 	// Sql query
-	query := fmt.Sprint("SELECT DISTINCT")
-	query = query + " " + "submission_id"
-	query = query + " " + "FROM"
-	query = query + " " + "submissions"
-	query = query + " " + "WHERE"
-	query = query + " " + "submission_id = '" + fmt.Sprint(identity)
-	query = query + "'"
-	query = query + ";"
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			submission_id, date_submitted, last_modified, locale
+		FROM
+			submissions
+		WHERE
+			submission_id = %v
+		;
+	`, identity)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)
@@ -55,12 +56,13 @@ func New (identity int) (Submission, error) {
 
 	// Start variables
 	s := Submission{}
-	s.ID = -1
 
 	// View results
 	for res.Next() {
 		// Get values
-		err = res.Scan(&s.ID)
+		err = res.Scan(
+			&s.ID, &s.DateStart, &s.DateLastChange, &s.Locale,
+		)
 
 		// Check errors
 		if err != nil {
@@ -71,7 +73,7 @@ func New (identity int) (Submission, error) {
 	}
 
 	// Check submission ID
-	if s.ID == -1 {
+	if s.ID == 0 {
 		// Create error
 		msg := "[ERROR] -> Not found submission!"
 		err = errors.New(msg)

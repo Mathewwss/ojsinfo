@@ -123,7 +123,6 @@ func (s *Submission) GetReviewers () error {
 		// Create review
 		rev := Review{}
 		rev.UID = user.UID
-		rev.GetEmail()
 		rev.Round = round
 		rev.Cancelled = cancelled
 		rev.Declined = declined

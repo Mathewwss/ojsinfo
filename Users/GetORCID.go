@@ -1,12 +1,13 @@
 // ----------------------------- Package ---------------------------- //
 
-package Submissions
+package Users
 
 // ------------------------------------------------------------------ //
 
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -21,7 +22,7 @@ import "fmt"
 
 // ---------------------------- Functions --------------------------- //
 
-func (s *Submission) GetDateSubmitted () error {
+func (u *User) GetORCID () error {
 	// Check connection
 	err := DbCfg.Db_conf.CheckCon()
 
@@ -32,17 +33,22 @@ func (s *Submission) GetDateSubmitted () error {
 
 	}
 
-	// Sql query
-	query := fmt.Sprint("SELECT DISTINCT")
-	query = query + " " + "CASE"
-	query = query + " " + "WHEN date_submitted IS NULL THEN \"\""
-	query = query + " " + "ELSE date_submitted"
-	query = query + " " + "END"
-	query = query + " " + "FROM"
-	query = query + " " + "submissions"
-	query = query + " " + "WHERE"
-	query = query + " " + "submission_id = '" + fmt.Sprint(s.ID) + "'"
-	query = query + ";"
+	// Base query
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			setting_value
+		FROM
+			user_settings
+		WHERE
+			setting_name = 'orcid'
+			AND user_id = %v
+		ORDER BY
+			locale
+		;
+	`, u.UID)
+
+	// Same line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)
@@ -57,7 +63,7 @@ func (s *Submission) GetDateSubmitted () error {
 	// View results
 	for res.Next() {
 		// Get values
-		err = res.Scan(&s.Start)
+		err = res.Scan(&u.ORCID)
 
 		// Check errors
 		if err != nil {
@@ -69,7 +75,6 @@ func (s *Submission) GetDateSubmitted () error {
 
 	// Finish
 	return nil
-
 }
 
 // ------------------------------------------------------------------ //

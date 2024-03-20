@@ -7,6 +7,7 @@ package Users
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "errors"
 import "fmt"
 
@@ -35,14 +36,19 @@ func New (identity string) (User, error) {
 	}
 
 	// Sql query
-	query := fmt.Sprint("SELECT DISTINCT")
-	query = query + " " + "user_id"
-	query = query + " " + "FROM"
-	query = query + " " + "users"
-	query = query + " " + "WHERE"
-	query = query + " " + "email = '" + identity + "'"
-	query = query + " " + "OR username = '" + identity + "'"
-	query = query + ";"
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			user_id, email, username, url, phone, country
+		FROM
+			users
+		WHERE
+			username = '%v'
+			OR email = '%v'
+		;
+	`, identity, identity)
+
+	// Same line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)
@@ -60,7 +66,9 @@ func New (identity string) (User, error) {
 	// View results
 	for res.Next() {
 		// Get value
-		err = res.Scan(&u.UID)
+		err = res.Scan(
+			&u.UID, &u.Email, &u.Username, &u.URL, &u.Phone, &u.Country,
+		)
 
 		// Check errors
 		if err != nil {

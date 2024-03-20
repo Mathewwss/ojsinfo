@@ -7,6 +7,7 @@ package Users
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -33,21 +34,39 @@ func (u *User) GetRealNames () error {
 	}
 
 	// Base query
-	query := fmt.Sprint("SELECT DISTINCT")
-	query = query + " " + "locale, setting_value, setting_name"
-	query = query + " " + "FROM"
-	query = query + " " + "user_settings"
-	query = query + " " + "WHERE"
-	query = query + " " + "("
-	query = query + " " + "setting_name = 'givenName'"
-	query = query + " " + "OR setting_name = 'familyName'"
-	query = query + " " + ")"
-	query = query + " " + "AND user_id = '" + fmt.Sprint(u.UID) + "'"
-	query = query + " " + "AND setting_value <> ''"
-	query = query + " " + "ORDER BY"
-	query = query + " " + "locale ASC,"
-	query = query + " " + "setting_name DESC"
-	query = query + " " + ";"
+	query := fmt.Sprintf(`
+		SELECT
+			s1.locale,
+			CONCAT(s1.setting_value, " ", s2.setting_value)
+		FROM
+			(
+				SELECT DISTINCT
+					locale, setting_value, setting_name
+				FROM
+					user_settings
+				WHERE
+					setting_name = 'givenName'
+					AND setting_value <> ''
+					AND user_id = %v
+			) AS s1
+		INNER JOIN
+			(
+				SELECT DISTINCT
+					locale, setting_value, setting_name
+				FROM
+					user_settings
+				WHERE
+					setting_name = 'familyName'
+					AND setting_value <> ''
+					AND user_id = %v
+			) AS s2
+		ON
+			s1.locale = s2.locale
+		;
+	`, u.UID, u.UID)
+
+	// Same line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)
@@ -61,14 +80,13 @@ func (u *User) GetRealNames () error {
 
 	// Start variables
 	locale := ""
-	setting := ""
 	name := ""
 	u.RealNames = map[string]string{}
 
 	// View results
 	for res.Next() {
 		// Get values
-		err = res.Scan(&locale, &name, &setting)
+		err = res.Scan(&locale, &name)
 
 		// Check errors
 		if err != nil {
@@ -77,14 +95,8 @@ func (u *User) GetRealNames () error {
 
 		}
 
-		if setting == "givenName" {
-
-			u.RealNames[locale] = name
-
-		} else if setting == "familyName" {
-			u.RealNames[locale] = u.RealNames[locale] + " " + name
-
-		}
+		// Update name
+		u.RealNames[locale] = name
 
 	}
 

@@ -7,6 +7,7 @@ package Submissions
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -32,32 +33,62 @@ func (s *Submission) GetAuthors () error {
 
 	}
 
-	// Base query
-	query := "SELECT DISTINCT"
-	query = query + " " + "t1.seq, t3.locale, t1.email,"
-	query = query + " " + "t3.setting_value"
-	query = query + " " + "FROM"
-	query = query + " " + "authors AS t1"
-	query = query + " " + "INNER JOIN"
-	query = query + " " + "publications AS t2"
-	query = query + " " + "ON"
-	query = query + " " + "t1.publication_id = t2.publication_id"
-	query = query + " " + "INNER JOIN"
-	query = query + " " + "author_settings AS t3"
-	query = query + " " + "ON"
-	query = query + " " + "t1.author_id = t3.author_id"
-	query = query + " " + "WHERE"
-	query = query + " " + "t2.submission_id = '" + fmt.Sprint(s.ID)
-	query = query + " " + "'"
-	query = query + " " + "AND ("
-	query = query + " " + "t3.setting_name = 'givenName'"
-	query = query + " " + "OR t3.setting_name = 'familyName'"
-	query = query + " " + ")"
-	query = query + " " + "ORDER BY"
-	query = query + " " + "t1.seq ASC,"
-	query = query + " " + "t3.locale ASC,"
-	query = query + " " + "t3.setting_name DESC"
-	query = query + " " + ";"
+	query := fmt.Sprintf(`
+		SELECT
+			s1.seq, s1.locale, s1.email,
+			CONCAT(s1.setting_value, " ",  s2.setting_value)
+		FROM
+			(
+				SELECT DISTINCT
+					t1.seq, t3.locale, t1.email, t3.setting_value
+				FROM
+					authors AS t1
+				INNER JOIN
+					publications AS t2
+				ON
+					t1.publication_id = t2.publication_id
+				INNER JOIN
+					author_settings AS t3
+				ON
+					t1.author_id = t3.author_id
+				WHERE
+					t3.setting_name = 'givenName'
+					AND t2.submission_id = %v
+					AND t3.setting_value <> ''
+				ORDER BY
+					t1.seq ASC, t3.locale ASC
+			) AS s1
+		INNER JOIN
+			(
+				SELECT DISTINCT
+					t1.seq, t3.locale, t1.email, t3.setting_value
+				FROM
+					authors AS t1
+				INNER JOIN
+					publications AS t2
+				ON
+					t1.publication_id = t2.publication_id
+				INNER JOIN
+					author_settings AS t3
+				ON
+					t1.author_id = t3.author_id
+				WHERE
+					t3.setting_name = 'familyName'
+					AND t2.submission_id = %v
+					AND t3.setting_value <> ''
+				ORDER BY
+					t1.seq ASC, t3.locale ASC
+			) AS s2
+		ON
+			s1.email = s2.email
+		ORDER BY
+			s1.seq DESC,
+			s1.locale ASC
+		;
+	`, s.ID, s.ID)
+
+	// Same Line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)
@@ -70,19 +101,16 @@ func (s *Submission) GetAuthors () error {
 	}
 
 	// Start variables
-	seq := -1
-	last_seq := -1
+	seq := uint8(0)
 	locale := ""
-	last_locale := ""
 	email := ""
-	value := ""
 	name := ""
-	s.Authors = map[int]map[string][]string{}
+	s.Authors = map[uint8]map[string][]string{}
 
 	// View results
 	for res.Next() {
 		// Get values
-		err = res.Scan(&seq, &locale, &email, &value)
+		err = res.Scan(&seq, &locale, &email, &name)
 
 		// Check errors
 		if err != nil {
@@ -91,37 +119,16 @@ func (s *Submission) GetAuthors () error {
 
 		}
 
-		// Check last values
-		if last_seq == seq && last_locale == locale {
-			// Update name
-			name = name + " " + value
-
-			if len(s.Authors[seq]) == 0 {
-				// Start map
-				s.Authors[seq] = map[string][]string{}
-
-			}
-
-			// Email error
-			if email == "<![CDATA[]]>" {
-				// Slice update (empty email)
-				s.Authors[seq][locale] = []string{name, ""}
-
-			} else {
-				// Slice update (empty email)
-				s.Authors[seq][locale] = []string{name, email}
-
-			}
-
-		} else {
-			// Update last variables
-			last_seq = seq
-			last_locale = locale
-
-			// Update name
-			name = value
+		// Check size
+		if len(s.Authors[seq + 1]) == 0 {
+			// Start nested map
+			s.Authors[seq + 1] = map[string][]string{}
 
 		}
+
+		// Update map
+		s.Authors[seq + 1][locale] = []string{name, email}
+
 	}
 
 	// Finish

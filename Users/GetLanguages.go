@@ -1,13 +1,15 @@
 // ----------------------------- Package ---------------------------- //
 
-package Submissions
+package Users
 
 // ------------------------------------------------------------------ //
 
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "fmt"
+import "strings"
 
 // ------------------------------------------------------------------ //
 
@@ -21,7 +23,8 @@ import "fmt"
 
 // ---------------------------- Functions --------------------------- //
 
-func (s *Submission) GetJournalNames () error {
+// Get login name
+func (u *User) GetLanguages () error {
 	// Check connection
 	err := DbCfg.Db_conf.CheckCon()
 
@@ -33,21 +36,19 @@ func (s *Submission) GetJournalNames () error {
 	}
 
 	// Sql query
-	query := fmt.Sprint("SELECT DISTINCT")
-	query = query + " " + "t2.locale, t2.setting_value"
-	query = query + " " + "FROM"
-	query = query + " " + "submissions AS t1"
-	query = query + " " + "INNER JOIN"
-	query = query + " " + "journal_settings AS t2"
-	query = query + " " + "ON"
-	query = query + " " + "t1.context_id = t2.journal_id"
-	query = query + " " + "WHERE"
-	query = query + " " + "t2.setting_name = 'name'"
-	query = query + " " + "AND t1.submission_id = '" + fmt.Sprint(s.ID)
-	query = query + "'"
-	query = query + " " + "ORDER BY"
-	query = query + " " + "t2.locale"
-	query = query + ";"
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			locales
+		FROM
+			users
+		WHERE
+			user_id = %v
+			AND locales <> ''
+		;
+	`, u.UID)
+
+	// Same line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)
@@ -59,15 +60,13 @@ func (s *Submission) GetJournalNames () error {
 
 	}
 
-	// Start variables
-	locale := ""
-	name := ""
-	s.JournalNames = map[string]string{}
+	// Temp
+	value := ""
 
 	// View results
 	for res.Next() {
-		// Get values
-		err = res.Scan(&locale, &name)
+		// Check errors
+		err := res.Scan(&value)
 
 		// Check errors
 		if err != nil {
@@ -75,15 +74,13 @@ func (s *Submission) GetJournalNames () error {
 			return err
 
 		}
-
-		// Update map
-		s.JournalNames[locale] = name
-
 	}
 
-	// Finish
-	return nil
+	// Update value
+	u.Languages = strings.Split(value, ":")
 
+	// Show user
+	return nil
 }
 
 // ------------------------------------------------------------------ //

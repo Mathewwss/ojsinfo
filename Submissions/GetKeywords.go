@@ -7,6 +7,7 @@ package Submissions
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -34,31 +35,33 @@ func (s *Submission) GetKeywords () error {
 	}
 
 	// Sql query
-	query := fmt.Sprint("SELECT DISTINCT")
-	query = query + " " + "t1.locale, t1.setting_value"
-	query = query + " " + "FROM"
-	query = query + " " + "controlled_vocab_entry_settings AS t1"
-	query = query + " " + "INNER JOIN"
-	query = query + " " + "controlled_vocab_entries AS t2"
-	query = query + " " + "ON"
-	query = query + " " + "t1.controlled_vocab_entry_id ="
-	query = query + " " + "t2.controlled_vocab_entry_id"
-	query = query + " " + "INNER JOIN"
-	query = query + " " + "controlled_vocabs AS t3"
-	query = query + " " + "ON"
-	query = query + " " + "t2.controlled_vocab_id ="
-	query = query + " " + "t3.controlled_vocab_id"
-	query = query + " " + "INNER JOIN"
-	query = query + " " + "publications AS t4"
-	query = query + " " + "ON"
-	query = query + " " + "t3.assoc_id = t4.publication_id"
-	query = query + " " + "WHERE"
-	query = query + " " + "t1.setting_name = 'submissionKeyword'"
-	query = query + " " + "AND t4.submission_id = '"
-	query = query + fmt.Sprint(s.ID) + "'"
-	query = query + " " + "ORDER BY"
-	query = query + " " + "t1.locale"
-	query = query + ";"
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			t1.locale, t1.setting_value
+		FROM
+			controlled_vocab_entry_settings AS t1
+		INNER JOIN
+			controlled_vocab_entries AS t2
+		ON
+			t1.controlled_vocab_entry_id = t2.controlled_vocab_entry_id
+		INNER JOIN
+			controlled_vocabs AS t3
+		ON
+			t2.controlled_vocab_id = t3.controlled_vocab_id
+		INNER JOIN
+			publications AS t4
+		ON
+			t3.assoc_id = t4.publication_id
+		WHERE
+			t1.setting_name = 'submissionKeyword'
+			AND t4.submission_id = %v
+		ORDER BY
+			t1.locale
+		;
+	`, s.ID)
+
+	// Same Line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)

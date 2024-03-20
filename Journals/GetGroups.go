@@ -7,6 +7,7 @@ package Journals
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -33,26 +34,32 @@ func (j *Journal) GetGroups () error {
 	}
 
 	// Sql query
-	query := "SELECT DISTINCT"
-	query = query + " " + "t1.locale, t1.user_group_id,"
-	query = query + " " + "t1.setting_value"
-	query = query + " " + "FROM"
-	query = query + " " + "user_group_settings AS t1"
-	query = query + " " + "INNER JOIN"
-	query = query + " " + "user_groups AS t2"
-	query = query + " " + "ON"
-	query = query + " " + "t1.user_group_id = t2.user_group_id"
-	query = query + " " + "INNER JOIN"
-	query = query + " " + "journals AS t3"
-	query = query + " " + "ON"
-	query = query + " " + "t2.context_id = t3.journal_id"
-	query = query + " " + "WHERE"
-	query = query + " " + "t1.setting_name = 'name'"
-	query = query + " " + "AND t3.journal_id = '" + fmt.Sprint(j.ID)
-	query = query + "'"
-	query = query + " " + "ORDER BY"
-	query = query + " " + "t1.locale ASC, t1.user_group_id ASC"
-	query = query + ";"
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			t1.locale, t1.user_group_id,
+			t1.setting_value
+		FROM
+			user_group_settings AS t1
+		INNER JOIN
+			user_groups AS t2
+		ON
+			t1.user_group_id = t2.user_group_id
+		INNER JOIN
+			journals AS t3
+		ON
+			t2.context_id = t3.journal_id
+		WHERE
+			t1.setting_name = 'name'
+			AND t3.journal_id = %v
+		ORDER BY
+			t1.locale ASC, t1.user_group_id ASC
+		;
+	`, j.ID)
+
+	// One line
+	Regex.OneLine(&query)
+
+	// Sql query
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)

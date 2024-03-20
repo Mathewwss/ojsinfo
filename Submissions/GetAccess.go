@@ -7,8 +7,8 @@ package Submissions
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "fmt"
-import "database/sql"
 
 // ------------------------------------------------------------------ //
 
@@ -44,15 +44,6 @@ func (s *Submission) GetAccess () error {
 
 	}
 
-	// Start map
-	s.Access = map[string]int64{
-		"All": 0,
-		"Abstract": 0,
-		"HTML": 0,
-		"PDF": 0,
-		"Others": 0,
-	}
-
 	// Check publication status
 	if s.Published == false {
 		// Stop
@@ -68,38 +59,88 @@ func (s *Submission) GetAccess () error {
 		[]string{"Others", "515", "3"},
 	}
 
-	// Base query
-	base := "SELECT"
-	base = base + " " + "SUM(metric)"
-	base = base + " " + "FROM"
-	base = base + " " + "metrics"
-	base = base + " " + "WHERE"
-	base = base + " " + "submission_id = '" + fmt.Sprint(s.ID)
-	base = base + "'"
+	// Init value
+	query := ""
 
 	// View types
 	for a := 0; a < len(access_type); a++ {
-		// Default value
-		s.Access[access_type[a][0]] = 0
+		// Temporary query
+		tmp_query := fmt.Sprintf(`
+			SELECT
+				"%v" AS "Code",
+				CASE
+					WHEN
+						SUM(metric) IS NULL
+					THEN
+						0
+					ELSE
+						SUM(metric)
+				END AS "Count"
+			FROM
+				metrics
+			WHERE
+				submission_id = %v
+				AND assoc_type = %v
+		`, access_type[a][0], s.ID, access_type[a][1])
 
-		// Update query
-		query := base
-		query = query + " " + "AND assoc_type = '"
-		query = query + access_type[a][1] + "'"
+		// Same line
+		Regex.OneLine(&tmp_query)
 
-		// Check file type
+		// View file type
 		if access_type[a][2] != "-1" {
-			// Update query
-			query = query + " " + "AND file_type = '"
-			query = query + access_type[a][2] + "'"
+			// Update values
+			tmp_query = tmp_query + " "
+			tmp_query = tmp_query + "AND file_type = "
+			tmp_query = tmp_query + access_type[a][2]
 
 		}
 
-		// Finish query
-		query = query + ";"
+		// View loop
+		if a != 0 {
+			// Update value
+			query = query + " "
+			query = query + "UNION"
+			query = query + " "
+			query = query + tmp_query
 
-		// Run query
-		res, err := DbCfg.Db_conf.Con.Query(query)
+		} else {
+			// Update value
+			query = query + " " + tmp_query
+		}
+
+	}
+
+	// Finish query
+	query = query + " "
+	query = query + ";"
+
+	// Run query
+	res, err := DbCfg.Db_conf.Con.Query(query)
+
+	// Check errors
+	if err != nil {
+		// Stop
+		return err
+
+	}
+
+	// Start map
+	s.Access = map[string]int64{
+		"All": 0,
+		"Abstract": 0,
+		"HTML": 0,
+		"PDF": 0,
+		"Others": 0,
+	}
+
+	// Start values
+	value := int64(0)
+	code := ""
+
+	// View results
+	for res.Next() {
+		// Get value
+		err = res.Scan(&code, &value)
 
 		// Check errors
 		if err != nil {
@@ -108,26 +149,10 @@ func (s *Submission) GetAccess () error {
 
 		}
 
-		// View results
-		for res.Next() {
-			// Start variable
-			var num sql.NullInt64
+		// Update map
+		s.Access[code] = value
+		s.Access["All"] = s.Access["All"] + value
 
-			// Get value
-			err = res.Scan(&num)
-
-			// Check errors
-			if err != nil {
-				// Stop
-				return err
-
-			}
-
-			// Update map
-			s.Access[access_type[a][0]] = num.Int64
-			s.Access["All"] = s.Access["All"] + num.Int64
-
-		}
 	}
 
 	// Finish

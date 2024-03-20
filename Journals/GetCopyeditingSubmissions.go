@@ -7,6 +7,7 @@ package Journals
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -33,18 +34,23 @@ func (j *Journal) GetCopyeditingSubmissions () error {
 	}
 
 	// Sql query
-	query := "SELECT DISTINCT"
-	query = query + " " + "submission_id"
-	query = query + " " + "FROM"
-	query = query + " " + "submissions"
-	query = query + " " + "WHERE"
-	query = query + " " + "status = '1'"
-	query = query + " " + "AND stage_id = '4'"
-	query = query + " " + "AND submission_progress = '0'"
-	query = query + " " + "AND context_id = '" + fmt.Sprint(j.ID) + "'"
-	query = query + " " + "ORDER BY"
-	query = query + " " + "date_submitted"
-	query = query + ";"
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			submission_id
+		FROM
+			submissions
+		WHERE
+			status = 1
+			AND stage_id = 4
+			AND submission_progress = 0
+			AND context_id = %v
+		ORDER BY
+			date_submitted
+		;
+	`, j.ID)
+
+	// One line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)

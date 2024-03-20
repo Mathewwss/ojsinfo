@@ -7,6 +7,7 @@ package Journals
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -33,16 +34,21 @@ func (j *Journal) GetNames () error {
 	}
 
 	// Sql query
-	query := "SELECT DISTINCT"
-	query = query + " " + "locale, setting_value"
-	query = query + " " + "FROM"
-	query = query + " " + "journal_settings"
-	query = query + " " + "WHERE"
-	query = query + " " + "setting_name = 'name'"
-	query = query + " " + "AND journal_id = '" + fmt.Sprint(j.ID) + "'"
-	query = query + " " + "ORDER BY"
-	query = query + " " + "locale"
-	query = query + ";"
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			locale, setting_value
+		FROM
+			journal_settings
+		WHERE
+			setting_name = 'name'
+			AND journal_id = %v
+		ORDER BY
+			locale
+		;
+	`, j.ID)
+
+	// Same line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)

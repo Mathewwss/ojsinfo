@@ -7,6 +7,7 @@ package Journals
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "errors"
 import "fmt"
 
@@ -34,13 +35,18 @@ func New (identity string) (Journal, error) {
 	}
 
 	// Sql query
-	query := fmt.Sprint("SELECT DISTINCT")
-	query = query + " " + "journal_id, path"
-	query = query + " " + "FROM"
-	query = query + " " + "journals"
-	query = query + " " + "WHERE"
-	query = query + " " + "path = '" + identity + "'"
-	query = query + ";"
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			journal_id, path
+		FROM
+			journals
+		WHERE
+			path = '%v'
+		;
+	`, identity)
+
+	// One line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)

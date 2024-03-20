@@ -7,6 +7,7 @@ package Submissions
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "database/sql"
 import "fmt"
 
@@ -34,26 +35,30 @@ func (s *Submission) GetPublicationInfo () error {
 	}
 
 	// Sql query
-	query := fmt.Sprint("SELECT DISTINCT")
-	query = query + " " + "volume, number, year, published"
-	query = query + " " + "FROM"
-	query = query + " " + "issues"
-	query = query + " " + "WHERE"
-	query = query + " " + "issue_id = ("
-	query = query + " " + "SELECT DISTINCT"
-	query = query + " " + "t2.setting_value"
-	query = query + " " + "FROM"
-	query = query + " " + "publications AS t1"
-	query = query + " " + "INNER JOIN"
-	query = query + " " + "publication_settings AS t2"
-	query = query + " " + "ON"
-	query = query + " " + "t1.publication_id = t2.publication_id"
-	query = query + " " + "WHERE"
-	query = query + " " + "t2.setting_name = 'issueId'"
-	query = query + " " + "AND t1.submission_id = '"
-	query = query + fmt.Sprint(s.ID) + "'"
-	query = query + " " + ")"
-	query = query + " " + ";"
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			volume, number, year, published
+		FROM
+			issues
+		WHERE
+			issue_id = (
+				SELECT DISTINCT
+					t2.setting_value
+				FROM
+					publications AS t1
+				INNER JOIN
+					publication_settings AS t2
+				ON
+					t1.publication_id = t2.publication_id
+				WHERE
+					t2.setting_name = 'issueId'
+					AND t1.submission_id = %v
+			)
+		;
+	`, s.ID)
+
+	// Same line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)

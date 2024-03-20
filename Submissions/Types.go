@@ -16,14 +16,15 @@ import "github.com/Mathewwss/ojsinfo/Users"
 type Submission struct {
 	ID int
 	Locale string
-	Start string
+	DateStart string
+	DateLastChange string
 	Stage string
 	// language: title
 	Section map[string]string
 	// Order: langugage: [name, email]
-	Authors map[int]map[string][]string
+	Authors map[uint8]map[string][]string
 	// language: title
-	Titles map[string]string
+	Titles map[string][]string
 	// language: journal name
 	JournalNames map[string]string
 	Published bool

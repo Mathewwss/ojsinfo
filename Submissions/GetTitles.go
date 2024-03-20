@@ -7,6 +7,7 @@ package Submissions
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -33,41 +34,50 @@ func (s *Submission) GetTitles () error {
 	}
 
 	// Base query
-	query := "SELECT"
-	query = query + " " + "t2.locale, t2.setting_value"
-	query = query + " " + "FROM"
-	query = query + " " + "publications AS t1"
-	query = query + " " + "INNER JOIN"
-	query = query + " " + "publication_settings AS t2"
-	query = query + " " + "ON"
-	query = query + " " + "t1.publication_id = t2.publication_id"
-	query = query + " " + "WHERE"
-	query = query + " " + "t1.submission_id = '" + fmt.Sprint(s.ID)
-	query = query + "'"
+	query := fmt.Sprintf(`
+		SELECT
+			t2.locale, t2.setting_name, t2.setting_value
+		FROM
+			publications AS t1
+		INNER JOIN
+			publication_settings AS t2
+		ON
+			t1.publication_id = t2.publication_id
+		WHERE
+			(
+				t2.setting_name = 'title'
+				OR t2.setting_name = 'subtitle'
+			)
+			AND t1.submission_id = %v
+		ORDER BY
+			t2.locale ASC,
+			t2.setting_name DESC
+		;
+	`, s.ID)
 
-	// Titles type
-	titles := []string{
-		"title",
-		"subtitle",
+	// Same line
+	Regex.OneLine(&query)
+
+	// Run query
+	res, err := DbCfg.Db_conf.Con.Query(query)
+
+	// Check errors
+	if err != nil {
+		// Stop
+		return err
+
 	}
 
-	for a := 0; a < len(titles); a++ {
-		// View loop
-		if a == 0 {
-			// Start map
-			s.Titles = map[string]string{}
+	// Start variables
+	s.Titles = map[string][]string{}
+	value := ""
+	locale := ""
+	name := ""
 
-		}
-
-		// Finaly query
-		run := query + " " + "AND t2.setting_name = '" + titles[a]
-		run = run + "'"
-		run = run + " " + "ORDER BY"
-		run = run + " " + "t2.locale"
-		run = run + ";"
-
-		// Run query
-		res, err := DbCfg.Db_conf.Con.Query(run)
+	// View results
+	for res.Next() {
+		// Get values
+		err = res.Scan(&locale, &name, &value)
 
 		// Check errors
 		if err != nil {
@@ -76,39 +86,16 @@ func (s *Submission) GetTitles () error {
 
 		}
 
-		// Start variables
-		value := ""
-		locale := ""
+		if name == "title" {
 
-		// View results
-		for res.Next() {
-			// Get values
-			err = res.Scan(&locale, &value)
+			s.Titles[locale] = []string{"", ""}
 
-			// Check errors
-			if err != nil {
-				// Stop
-				return err
+			s.Titles[locale][0] = value
 
-			}
+		} else {
 
-			// Empty value
-			if value == "" {
-				// Next loop
-				continue
+			s.Titles[locale][1] = value
 
-			}
-
-			// Check size
-			if len(s.Titles[locale]) == 0 {
-				// Title
-				s.Titles[locale] = value
-
-			} else {
-				// Second title
-				s.Titles[locale] = s.Titles[locale] + " " + value
-
-			}
 		}
 	}
 

@@ -1,12 +1,13 @@
 // ----------------------------- Package ---------------------------- //
 
-package Users
+package Submissions
 
 // ------------------------------------------------------------------ //
 
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -21,7 +22,7 @@ import "fmt"
 
 // ---------------------------- Functions --------------------------- //
 
-func (u *User) GetEmail () error {
+func (s *Submission) GetJournalNames () error {
 	// Check connection
 	err := DbCfg.Db_conf.CheckCon()
 
@@ -33,13 +34,24 @@ func (u *User) GetEmail () error {
 	}
 
 	// Sql query
-	query := fmt.Sprint("SELECT DISTINCT")
-	query = query + " " + "email"
-	query = query + " " + "FROM"
-	query = query + " " + "users"
-	query = query + " " + "WHERE"
-	query = query + " " + "user_id = '" + fmt.Sprint(u.UID) + "'"
-	query = query + ";"
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			t2.locale, t2.setting_value
+		FROM
+			submissions AS t1
+		INNER JOIN
+			journal_settings AS t2
+		ON
+			t1.context_id = t2.journal_id
+		WHERE
+			t2.setting_name = 'name'
+			AND t1.submission_id = %v
+		ORDER BY
+			t2.locale
+	`, s.ID)
+
+	// Same line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)
@@ -51,10 +63,15 @@ func (u *User) GetEmail () error {
 
 	}
 
+	// Start variables
+	locale := ""
+	name := ""
+	s.JournalNames = map[string]string{}
+
 	// View results
 	for res.Next() {
-		// Get value
-		err = res.Scan(&u.Email)
+		// Get values
+		err = res.Scan(&locale, &name)
 
 		// Check errors
 		if err != nil {
@@ -62,10 +79,15 @@ func (u *User) GetEmail () error {
 			return err
 
 		}
+
+		// Update map
+		s.JournalNames[locale] = name
+
 	}
 
 	// Finish
 	return nil
+
 }
 
 // ------------------------------------------------------------------ //

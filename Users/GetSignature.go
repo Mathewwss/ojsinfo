@@ -1,6 +1,6 @@
 // ----------------------------- Package ---------------------------- //
 
-package Journals
+package Users
 
 // ------------------------------------------------------------------ //
 
@@ -22,7 +22,7 @@ import "fmt"
 
 // ---------------------------- Functions --------------------------- //
 
-func (j *Journal) GetReviewers () error {
+func (u *User) GetSignature () error {
 	// Check connection
 	err := DbCfg.Db_conf.CheckCon()
 
@@ -33,47 +33,19 @@ func (j *Journal) GetReviewers () error {
 
 	}
 
-	// Sql query
+	// Base query
 	query := fmt.Sprintf(`
 		SELECT DISTINCT
-			s1.email
+			locale, setting_value
 		FROM
-			(
-				SELECT DISTINCT
-					t1.email, s1.date_completed
-				FROM
-					users AS t1
-				INNER JOIN
-					user_user_groups AS t2
-				ON
-					t1.user_id = t2.user_id
-				INNER JOIN
-					user_groups AS t3
-				ON
-					t2.user_group_id = t3.user_group_id
-				LEFT JOIN
-					(
-						SELECT
-							t1.reviewer_id, t1.date_completed
-						FROM
-							review_assignments AS t1
-						INNER JOIN
-							submissions AS t2
-						ON
-							t1.submission_id = t2.submission_id
-						WHERE
-							t2.context_id = %v
-					) AS s1
-				ON
-					t1.user_id = s1.reviewer_id
-				WHERE
-					t3.role_id = '4096'
-					AND t3.context_id = %v
-				ORDER BY
-					s1.date_completed DESC
-			) AS s1
+			user_settings
+		WHERE
+			setting_name = 'signature'
+			AND user_id = %v
+		ORDER BY
+			locale
 		;
-	`, j.ID, j.ID)
+	`, u.UID)
 
 	// Same line
 	Regex.OneLine(&query)
@@ -88,14 +60,15 @@ func (j *Journal) GetReviewers () error {
 
 	}
 
-	// Start variable
-	j.Reviewers = []string{}
-	email := ""
+	// Start variables
+	u.Signature = map[string]string{}
+	locale := ""
+	value := ""
 
 	// View results
 	for res.Next() {
 		// Get values
-		err := res.Scan(&email)
+		err = res.Scan(&locale, &value)
 
 		// Check errors
 		if err != nil {
@@ -104,14 +77,13 @@ func (j *Journal) GetReviewers () error {
 
 		}
 
-		// Update slice
-		j.Reviewers = append(j.Reviewers, email)
+		// Update signature
+		u.Signature[locale] = value
 
 	}
 
 	// Finish
 	return nil
-
 }
 
 // ------------------------------------------------------------------ //

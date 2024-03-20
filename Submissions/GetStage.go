@@ -7,6 +7,7 @@ package Submissions
 // ----------------------------- Imports ---------------------------- //
 
 import "github.com/Mathewwss/ojsinfo/DbCfg"
+import "github.com/Mathewwss/ojsinfo/Regex"
 import "fmt"
 
 // ------------------------------------------------------------------ //
@@ -58,13 +59,18 @@ func (s *Submission) GetStage () error {
 	}
 
 	// Sql query
-	query := "SELECT"
-	query = query + " " + "status, stage_id, submission_progress"
-	query = query + " " + "FROM"
-	query = query + " " + "submissions"
-	query = query + " " + "WHERE"
-	query = query + " " + "submission_id = '" + fmt.Sprint(s.ID) + "'"
-	query = query + ";"
+	query := fmt.Sprintf(`
+		SELECT
+			CONCAT(status, ":", stage_id, ":", submission_progress)
+		FROM
+			submissions
+		WHERE
+			submission_id = %v
+		;
+	`, s.ID)
+
+	// Same line
+	Regex.OneLine(&query)
 
 	// Run query
 	res, err := DbCfg.Db_conf.Con.Query(query)
@@ -78,13 +84,11 @@ func (s *Submission) GetStage () error {
 
 	// Start variables
 	status := ""
-	stage := ""
-	progress := ""
 
 	// View results
 	for res.Next() {
 		// Get values
-		err = res.Scan(&status, &stage, &progress)
+		err = res.Scan(&status)
 
 		// Check errors
 		if err != nil {
@@ -93,11 +97,8 @@ func (s *Submission) GetStage () error {
 
 		}
 
-		// Map key
-		key := status + ":" + stage + ":" + progress
-
 		// Update map
-		s.Stage = possibles[key]
+		s.Stage = possibles[status]
 
 	}
 
